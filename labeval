@@ -1,0 +1,307 @@
+DUAL SIMPLEX
+clc
+clear all
+
+%% input parameters
+Var={'x_1','x_2','x3','s_1','s_2','sol'};
+cost=[-2 0 -1 0 0 0];
+a=[-1 -1 1 1 0 ; -1 2 -4 0 1 ];
+b=[-5;-8];
+A=[a b];
+bv=[4 5];
+
+%%
+zjcj=cost(bv)*A-cost;
+simplex_table=[zjcj; A];
+array2table(simplex_table,'VariableNames',Var)
+RUN=true;
+
+%% Dual Simplex table 
+while RUN
+sol=A(:,end);
+if any(sol<0)
+     fprintf('The current BFS is not feasible \n');
+     [leaving_value,pos_row]=min(sol);
+     fprintf('Leaving row %d \n', pos_row);
+     for i=1:size(A,2)-1
+            if A(pos_row,i)<0
+                ratio(i)= abs(zjcj(i)/A(pos_row,i));
+            else
+                ratio(i)=inf;
+            end
+     end
+         [entering_value,pos_col]=min(ratio);
+    fprintf('entering column %d \n', pos_col);
+    bv(pos_row)=pos_col;
+ pvt_key=A(pos_row, pos_col);
+  A(pos_row,:)=A(pos_row,:)/pvt_key;
+ for i=1:size(A,1)
+ if i~=pos_row
+ A(i,:)=A(i,:)-A(i, pos_col).*A(pos_row,:);
+ end
+ end
+ zjcj=cost(bv)*A-cost;
+ next_table=[zjcj;A];                                                                                                                                                                                                                    
+  array2table(next_table,'VariableNames',Var)
+ else
+     RUN=false;
+      z=input(' "0" for max problem and "1" for min problem : ');
+     fprintf('The current table is feasible\n');
+      if z==1
+          obj_value=-zjcj(end)
+      else
+          obj_value=zjcj(end)
+      end
+end
+end
+
+*****************************************************************************************************
+
+SIMPLEX:
+
+clc
+clear all
+format short
+%% To solve the LPP by Simplex Method
+%Min z=x1-3x2+2x3
+%Subject to 3x1-x2+2x3<=7
+%-2x1+4x2<=12
+%-4x1+3x2+8x3<=10
+%x1,x2,x3>=0
+%First to change the objective function from minimization to maximization
+%Max z=-x1+3x2-2x3
+
+%% To input parameters
+C=[-1 3 -2];
+Aa=[3 -1 2;-2 4 0;-4 3 8];
+b=[7; 12; 10];
+Variables=size(Aa,2);
+s=eye(size(Aa,1));
+A=[Aa s b];
+Cost=zeros(1,size(A,2));
+Cost(1:Variables)=C;
+BV=Variables+1:size(A,2)-1;
+
+%% To calculate Z-Row(Zj-Cj)
+ZjCj=Cost(BV)*A-Cost;
+
+%To print the table
+ZCj=[ZjCj; A];
+SimpTable=array2table(ZCj,'VariableNames',{'x_1','x_2','x_3','s_1','s_2','s_3','Sol'}) %make table
+
+%% Simplex Table Starts
+Run=true;
+while Run
+if any(ZjCj(1:end-1)<0) %To check any negative value is there
+    fprintf('The current BFS is not optimal \n')
+    fprintf('\n=========The next iteration continues========\n')
+    disp('Old Basic Variable (BV)=')
+    disp(BV)
+    % To find entering Variable
+    ZC=ZjCj(1:end-1);
+    [EnterCol, Pvt_Col]=min(ZC);
+    fprintf('The most negative element in Z-Row is %d Corresponding to Column %d \n', EnterCol, Pvt_Col)
+    fprintf('Entering Variable is %d \n', Pvt_Col)
+    
+    %To find the leaving variable
+    sol=A(:,end);
+    Column=A(:,Pvt_Col);
+    if all(Column<=0)
+        error('LPP has unbounded solution. All entries <= 0 in column %d', Pvt_Col)
+    else
+
+    % To check minimum ratio is with positive entering column entries
+    for i=1:size(Column,1)
+        if Column(i)>0
+    ratio(i)=sol(i)./Column(i);
+        else
+            ratio(i)=inf;
+        end
+    end
+        %To finding minimum ratio
+        [MinRatio, Pvt_Row]=min(ratio);
+        fprintf('Minimum ratio corresponding to pivot row is %d \n', Pvt_Row)
+        fprintf('Leaving Variable is %d \n', BV(Pvt_Row))
+    end
+        BV(Pvt_Row)=Pvt_Col;
+disp('New Basic Variables (BV) =')
+disp(BV)
+
+%Pivot Key
+Pvt_Key=A(Pvt_Row,Pvt_Col);
+
+%Update Table for next iteration
+A(Pvt_Row,:)=A(Pvt_Row,:)./Pvt_Key;
+
+for i=1:size(A,1)
+    if i~=Pvt_Row
+        A(i,:)=A(i,:)-A(i,Pvt_Col).*A(Pvt_Row,:);
+    end
+end
+ZjCj=ZjCj-ZjCj(Pvt_Col).*A(Pvt_Row,:);
+%To print the updated table
+    ZCj=[ZjCj;A];
+    SimpTable=array2table(ZCj,'VariableNames',{'x_1','x_2','x_3','s_1','s_2','s_3','Sol'})
+    BFS=zeros(1,size(A,2));
+    BFS(BV)=A(:,end);
+    BFS(end)=sum(BFS.*Cost);
+    CurrentBFS=array2table(BFS,'VariableNames',{'x_1','x_2','x_3','s_1','s_2','s_3','Sol'})
+else
+    Run=false
+    fprintf('The current BFS is optimal and Optimality is reached \n')
+end
+end
+
+******************************************************************************************
+LCM:
+
+clc
+clear all
+%a: supply
+%b: demand
+%c: cost matrix
+%c=[3 11 4 14 15;6 16 18 2 28;10 13 15 19 17;7 12 5 8 9];
+%c=[2 3 15 7;1 0 6 1;5 8 15 9];
+%c=[2 10 4 5; 6 12 8 11;3 9 5 7];
+cost=[6 4 1 5;8 9 2 7;4 3 6 4];
+A=[14 16 5];
+B=[6 10 15 4];
+m=size(cost,1);
+n=size(cost,2);
+% a=[15 25 10 15];
+% b=[20 10 15 15 5];
+% a=[6 1 10];
+% b=[7 5 3 2];
+% a=[12 25 20];
+% b=[25 10 15 5];
+z=0;
+if sum(A)==sum( B)
+    fprintf('Given transportation problem is Balanced \n');
+else
+     fprintf('Given transportation problem is Unbalanced \n');
+     if sum(A)<sum(B)
+         cost(end+1,:)=zeros(1,size(A,2));
+         A(end+1)=sum(B)-sum(A);
+     else
+         cost(:,end+1)=zeros(1,size(A,1));
+         B(end+1)=sum(A)-sum(B);
+     end
+end
+X=zeros(m,n);
+InitialC=cost;
+   for i=1:size(cost,1)
+       for j=1:size(cost,2)
+    cpq=min(cost(:));
+    if cpq==Inf
+    break
+       end
+%[p,q]=find(cpq==cost)
+%xpq=min(A(p),B(q))
+%[X(p,q),ind]=max(xpq)
+p=p1(ind)
+q=q1(ind)
+X(p,q)=min(A(p),B(q))
+if min(A(p),B(q))==A(p)
+B(q)=B(q)-A(p)
+A(p)=A(p)-X(p,q)
+cost(p,:)=Inf;
+else
+    A(p)=A(p)-B(q);
+    B(q)=B(q)-X(p,q);
+    cost(:,q)=Inf;
+end
+       end
+   end
+for i=1:size(cost,1)
+    for j=1:size(cost,2)
+z=z+InitialC(i,j)*X(i,j);
+    end
+end
+%fprintf('Initial BFS \n')
+array2table(X)
+fprintf('Transportation cost is %f \n',z);
+*****************
+
+BIGM
+clc
+clear all
+a = [2 1;1 3;0 1]
+b = [2;2;4]
+M=1000;
+c=[3 -4 0 -M 0 0];
+I=[1 0 0];
+Id=eye(size(a,1));
+n1=find(I==1);
+Id(n1,n1)=-Id(n1,n1);
+A=[a Id b];
+n=2;
+m=size(A,2)
+run=1;
+bv=n+1:m-1;
+while run==1
+    basic_cost=c(bv);
+    zj=basic_cost*A;
+    zjcj=zj-c;
+    zc=zjcj(1:end-1);
+    [mz,ec]=min(zc);
+    pc=A(:,ec);
+    b=A(:,end);
+    ratio=b./pc;
+    for i=1:size(A,1)
+        if ratio(i)<0
+            ratio(i)=inf;
+        end
+    end
+    [leave,lindex]=min(ratio);
+    bv(lindex)=ec;
+    pivot_row=lindex;
+    pivot_column=ec;
+    pv=A(pivot_row,pivot_column);
+    pivot_row=A(pivot_row,:)/pv;
+    for i=1:size(A,1)
+        if i~=lindex
+            A(i,:)=A(i,:)-(pivot_row)*A(i,ec);
+        else
+            A(i,:)=pivot_row;
+        end
+    end
+    basic_cost=c(bv);
+    zj=basic_cost*A;
+    zjcj=zj-c;
+    zc=zjcj(1:end-1)
+    if(zc>=0)
+        run=0;
+    else
+        run=1;
+    end
+    
+end
+*******************************************************
+LEAST COST METHOD LCM
+
+%least cost method
+clc
+clear all
+Cost = [3 11 4 14 15; 6 16 18 2 28; 3 9 5 7];
+A = [12 25 20];
+B = [ 25 10 15 5];
+ICost = Cost
+X = zeros(size(Cost))
+for i=1:size(Cost,1)
+    for j=1:size(Cost,2)
+        hh=min(Cost(:))
+        [rowind, colind]=find(hh==Cost)
+        x11=min(A(rowind),B(colind))
+        [val,ind]=max(x11)
+        ii=rowind(ind)
+        jj=colind(ind)
+        y11=min(A(ii),B(jj))
+        X(ii,jj)=y11
+        A(ii)=A(ii)-y11
+        B(jj)=B(jj)-y11
+        Cost(ii,jj)=inf
+    end
+end
+Initialcost=sum(sum(ICost.*X))
+
+
