@@ -279,29 +279,40 @@ end
 *******************************************************
 LEAST COST METHOD LCM
 
-%least cost method
-clc
-clear all
-Cost = [3 11 4 14 15; 6 16 18 2 28; 3 9 5 7];
-A = [12 25 20];
-B = [ 25 10 15 5];
-ICost = Cost
-X = zeros(size(Cost))
-for i=1:size(Cost,1)
-    for j=1:size(Cost,2)
-        hh=min(Cost(:))
-        [rowind, colind]=find(hh==Cost)
-        x11=min(A(rowind),B(colind))
-        [val,ind]=max(x11)
-        ii=rowind(ind)
-        jj=colind(ind)
-        y11=min(A(ii),B(jj))
-        X(ii,jj)=y11
-        A(ii)=A(ii)-y11
-        B(jj)=B(jj)-y11
-        Cost(ii,jj)=inf
-    end
+clc;
+clear all;
+cost=[2 10 4 5;6 12 8 11;3 9 5 7];
+supply=[12 25 20];
+demand=[25 10 15 5 ];
+[m,n]=size(cost);
+if(sum(supply)==sum(demand))
+else if sum(supply)>sum(demand)
+        cost(:,end+1)=zeros(m,1);
+        demand(end+1)=sum(supply)-sum(demand);
+else
+    cost(end+1,:)=zeros(1,n);
+        supply(end+1)=sum(demand)-sum(supply);
 end
-Initialcost=sum(sum(ICost.*X))
-
-
+end
+X=zeros(m,n);
+i_cost=cost;
+while(any(cost(:)~=inf))
+min_cost=min(cost(:));
+[r,c]=find(cost==min_cost);
+alloc=min(supply(r),demand(c));
+[max_alloc,index]=max(alloc);
+X(r(index),c(index))=max_alloc;
+rr=r(index);
+cc=c(index);
+if (min(supply(rr),demand(cc))==supply(rr))
+    demand(cc)=demand(cc)-max_alloc;
+    supply(rr)=supply(rr)-max_alloc;
+    cost(rr,:)=inf;
+else 
+    demand(cc)=demand(cc)-max_alloc;
+    supply(rr)=supply(rr)-max_alloc;
+    cost(:,cc)=inf;
+end
+end
+z=sum(sum(X.*i_cost))
+X
